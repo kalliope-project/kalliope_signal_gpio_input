@@ -1,0 +1,132 @@
+import logging
+from threading import Thread
+
+import RPi.GPIO as GPIO
+import time
+
+from kalliope.core.SynapseLauncher import SynapseLauncher
+
+from kalliope import Utils
+from kalliope.core import SignalModule
+
+logging.basicConfig()
+logger = logging.getLogger("kalliope")
+
+
+class Pin:
+    def __init__(self, pin_number=None, synapse_list=list(), count=0, prev_inp=1):
+        self.pin_number = pin_number
+        self.synapse_list = synapse_list
+        self.count = count
+        self.prev_inp = prev_inp
+
+    def __str__(self):
+        returned_dict = {
+            "pin number: %s" % self.pin_number,
+            "synapse_list: %s" % self.synapse_list
+        }
+        return str(returned_dict)
+
+
+class Gpio_buttons(SignalModule, Thread):
+
+    def __init__(self, **kwargs):
+        super(Gpio_buttons, self).__init__(**kwargs)
+        Utils.print_info('[Gpio_buttons] Starting Gpio_buttons signal manager')
+        # here is the list of synapse that deals with gpio_button signal
+        self.list_synapses_with_gpio_buttons = list(super(Gpio_buttons, self).get_list_synapse())
+        # get a list of Pin object with their attached synapse name to launch
+        self.list_pin = self.get_list_pin_with_associated_synapse(self.list_synapses_with_gpio_buttons)
+
+    def run(self):
+        logger.debug("[Mqtt_subscriber] Starting Gpio_buttons thread")
+
+        # setup GPIO
+        GPIO.setmode(GPIO.BCM)
+
+        # init each GPIO pin
+        for pin in self.list_pin:
+            GPIO.setup(pin.pin_number, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            # get the default state
+            pin.prev_inp = GPIO.input(pin.pin_number)
+        # check forever each button
+        try:
+            while True:
+                for pin in self.list_pin:
+                    self.button_check(pin)
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            GPIO.cleanup()
+
+    @staticmethod
+    def check_parameters(parameters):
+        """
+        overwrite method
+        receive a dict of parameter from a gpio_buttons signal
+        :param parameters: dict of gpio_buttons parameters
+        :return: True if parameters are valid
+        """
+        # check mandatory parameters
+        mandatory_parameters = ["pins"]
+        if not all(key in parameters for key in mandatory_parameters):
+            return False
+
+        return True
+
+    @staticmethod
+    def get_list_pin_with_associated_synapse(list_synapse):
+        """
+        return a list of pin object with their respective list of synapse to execute when switched
+        :return: list of Pin
+        """
+        list_pins = list()
+
+        for synapse in list_synapse:
+            for signal in synapse.signals:
+                if signal.name == "gpio_buttons":
+                    for pin in signal.parameters["pins"]:
+                        # check if the pin is already declared in the list
+                        if not any(x.pin_number == pin for x in list_pins):
+                            logger.debug("[gpio_buttons] Add the pin %s to the list" % pin)
+                            # create a new Pin object
+                            new_pin = Pin(pin_number=pin)
+                            new_pin.synapse_list.append(synapse.name)
+                            logger.debug("[gpio_buttons] Synapse %s added to pin %s" % (synapse.name, pin))
+                            list_pins.append(new_pin)
+
+                        else:
+                            logger.debug("[gpio_buttons] Pin %s already in the list" % pin)
+                            # only add the synapse to the pin object
+                            for pin_to_find in list_pins:
+                                if pin_to_find.pin_number == pin:
+                                    pin_to_find.synapse_list.append(synapse.name)
+                                    logger.debug("[gpio_buttons] Synapse %s added to pin %s" % (synapse.name, pin))
+
+        for x in list_pins:
+            print(x)
+
+        return list_pins
+
+    @staticmethod
+    def button_check(pin_object):
+        """
+
+        :param pin_object:
+        :type pin_object: Pin
+        :return:
+        """
+
+        inp = GPIO.input(pin_object.pin_number)
+        if inp != pin_object.prev_inp and inp:
+            pin_object.count = pin_object.count + 1
+            print("Button pressed: %s" % pin_object.pin_number)
+            print("Button count: %s" % pin_object.count)
+            print("run synapse: %s" % pin_object.synapse_list)
+            # for synapse in pin_object.synapse_list:
+            #     logger.debug("[gpio_buttons] start synapse name %s" % synapse)
+            #     overriding_parameter_dict = dict()
+            #     overriding_parameter_dict["pin_number"] = pin_object.pin_number
+            #     overriding_parameter_dict["counter"] = pin_object.count
+            #     SynapseLauncher.start_synapse_by_name(synapse,
+            #                                           overriding_parameter_dict=overriding_parameter_dict)
+        pin_object.prev_inp = inp
