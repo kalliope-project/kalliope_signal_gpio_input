@@ -14,16 +14,19 @@ logger = logging.getLogger("kalliope")
 
 
 class Pin:
-    def __init__(self, pin_number=None, synapse_list=list(), count=0, prev_inp=1):
+    def __init__(self, pin_number=None, synapse_list=None, count=0, prev_inp=1):
         self.pin_number = pin_number
         self.synapse_list = synapse_list
         self.count = count
         self.prev_inp = prev_inp
 
+        if self.synapse_list is None:
+            self.synapse_list = list()
+
     def __str__(self):
         returned_dict = {
-            "pin number: %s" % self.pin_number,
-            "synapse_list: %s" % self.synapse_list
+            "pin number": self.pin_number,
+            "synapse_list:": self.synapse_list
         }
         return str(returned_dict)
 
@@ -102,9 +105,6 @@ class Gpio_buttons(SignalModule, Thread):
                                     pin_to_find.synapse_list.append(synapse.name)
                                     logger.debug("[gpio_buttons] Synapse %s added to pin %s" % (synapse.name, pin))
 
-        for x in list_pins:
-            print(x)
-
         return list_pins
 
     @staticmethod
@@ -119,14 +119,14 @@ class Gpio_buttons(SignalModule, Thread):
         inp = GPIO.input(pin_object.pin_number)
         if inp != pin_object.prev_inp and inp:
             pin_object.count = pin_object.count + 1
-            print("Button pressed: %s" % pin_object.pin_number)
-            print("Button count: %s" % pin_object.count)
-            print("run synapse: %s" % pin_object.synapse_list)
-            # for synapse in pin_object.synapse_list:
-            #     logger.debug("[gpio_buttons] start synapse name %s" % synapse)
-            #     overriding_parameter_dict = dict()
-            #     overriding_parameter_dict["pin_number"] = pin_object.pin_number
-            #     overriding_parameter_dict["counter"] = pin_object.count
-            #     SynapseLauncher.start_synapse_by_name(synapse,
-            #                                           overriding_parameter_dict=overriding_parameter_dict)
+            logger.debug("[gpio_buttons] Button pressed: %s" % pin_object.pin_number)
+            logger.debug("[gpio_buttons] Button count: %s" % pin_object.count)
+            logger.debug("[gpio_buttons] run synapse: %s" % pin_object.synapse_list)
+            for synapse in pin_object.synapse_list:
+                logger.debug("[gpio_buttons] start synapse name %s" % synapse)
+                overriding_parameter_dict = dict()
+                overriding_parameter_dict["gpio_buttons_pin_number"] = pin_object.pin_number
+                overriding_parameter_dict["gpio_buttons_pin_counter"] = pin_object.count
+                SynapseLauncher.start_synapse_by_name(synapse,
+                                                      overriding_parameter_dict=overriding_parameter_dict)
         pin_object.prev_inp = inp
