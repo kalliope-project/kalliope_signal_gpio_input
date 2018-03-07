@@ -9,10 +9,12 @@ This Kalliope signal can be used for example with the following hardware:
 - Magnetic switch
 - PIR sensor
 
+![example_button](images/example_button.png)
+
 ## Installation
 
 ```bash
-kalliope install --git-url https://github.com/kalliope-project/kalliope_neuron_gpio_input.git
+kalliope install --git-url https://github.com/kalliope-project/kalliope_signal_gpio_input.git
 ```
 
 ## Options
@@ -65,7 +67,7 @@ This signal can be used for example to mute and unmute Kalliope
         pins:
           - 27
   neurons:
-    - mute
+    - mute:
         status: False
     - say:
         message: "I'm now listenning to you"
@@ -74,9 +76,9 @@ This signal can be used for example to mute and unmute Kalliope
   signals:
     - gpio_input:
         pins:
-          - 27          
+          - 22          
   neurons:
-    - mute
+    - mute:
         status: True
     - say:
         message: "I'm not listenning anymore"
