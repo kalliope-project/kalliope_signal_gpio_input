@@ -35,6 +35,7 @@ class Gpio_input(SignalModule, Thread):
 
     def __init__(self, **kwargs):
         super(Gpio_input, self).__init__(**kwargs)
+        Thread.__init__(self, name="Gpio_input")
         Utils.print_info('[gpio_input] Starting gpio_input signal manager')
         # here is the list of synapse that deals with gpio_button signal
         self.list_synapses_with_gpio_buttons = list(super(Gpio_input, self).get_list_synapse())
@@ -126,6 +127,6 @@ class Gpio_input(SignalModule, Thread):
                 overriding_parameter_dict = dict()
                 overriding_parameter_dict["gpio_input_pin_number"] = pin_object.pin_number
                 overriding_parameter_dict["gpio_input_pin_counter"] = pin_object.count
-                SynapseLauncher.start_synapse_by_name(synapse,
-                                                      overriding_parameter_dict=overriding_parameter_dict)
+                SynapseLauncher.start_synapse_by_list_name([synapse],
+                                                           overriding_parameter_dict=overriding_parameter_dict)
         pin_object.prev_inp = inp
