@@ -5,6 +5,7 @@
 Launch synapses from from a Raspberry Pi digital input received on a GPIO pin.
 
 This Kalliope signal can be used for example with the following hardware:
+
 - button
 - Magnetic switch
 - PIR sensor
@@ -67,8 +68,8 @@ This signal can be used for example to mute and unmute Kalliope
         pins:
           - 27
   neurons:
-    - mute:
-        status: False
+    - settings:
+          mute: False
     - say:
         message: "I'm now listenning to you"
         
@@ -76,12 +77,12 @@ This signal can be used for example to mute and unmute Kalliope
   signals:
     - gpio_input:
         pins:
-          - 22          
+          - 22
   neurons:
-    - mute:
-        status: True
+    - settings:
+         mute: True
     - say:
-        message: "I'm not listenning anymore"
+        message: "I'm not listening anymore"
 ```
 
 
