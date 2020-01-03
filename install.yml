@@ -5,6 +5,7 @@
   connection: local
 
   tasks:
-    - name: "Install python dependencies"
+    - name: "Install pip dependencies"
       pip:
-        name: RPi.GPIO
+        name: "RPi.GPIO"
+        executable: pip3
